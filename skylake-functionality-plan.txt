@@ -1,0 +1,194 @@
+SNAPMAKER U1 <> WLED FUNCTIONALITY PLAN
+========================================
+
+PURPOSE
+-------
+Extend the Snapmaker U1 cavity light with WLED while keeping the installation
+small, reversible, and non-invasive.
+
+Do not modify slicer profiles, print-start G-code, print-end G-code, factory
+tool-change macros, or the printer's original cavity-light behavior.
+
+
+MINIMAL INSTALLATION
+--------------------
+Keep the integration limited to two add-on files:
+
+1. wled-moonraker.conf
+   - Defines Moonraker's connection to WLED.
+   - Uses WLED preset 1 as the default white-light preset.
+
+2. wled-mirror.cfg
+   - Contains the lightweight Klipper watcher.
+   - Observes the cavity light and selected printer states.
+   - Stores enough state to detect transitions.
+   - Contacts WLED only when something relevant changes.
+
+The only changes to the main printer files should be:
+
+moonraker.conf:
+    [include wled-moonraker.conf]
+
+printer.cfg:
+    [include wled-mirror.cfg]
+
+
+CONFIRMED MASTER ON/OFF RULES
+-----------------------------
+- The stock cavity-light switch is the unconditional master control.
+- Cavity light OFF always turns WLED OFF.
+- No printer state, alert, or tool change can override cavity-light OFF.
+- Cavity light OFF to ON always loads WLED preset 1.
+- Preset 1 is the normal white working light.
+- When switched on, the watcher snapshots the current printer state.
+- Conditions that existed before light-on are ignored.
+- WLED stays white until a monitored transition happens after light-on.
+- Another OFF to ON cycle resets everything to white preset 1 again.
+
+Example: If the printer is already printing when the cavity light is switched
+on, WLED stays white. A later tool change, pause, resume, completion, or other
+enabled transition may then change the WLED mode.
+
+
+WLED OWNS THE VISUAL DESIGN
+---------------------------
+Create and maintain effects directly as WLED presets. Presets can define:
+
+- Static, breathing, chase, fade, and other effects.
+- Speed and intensity.
+- Brightness.
+- Segment layout.
+- Secondary and background colors.
+
+Klipper should normally select presets by number instead of rebuilding effects.
+
+
+ACTIVE TOOLHEAD FILAMENT COLOR
+------------------------------
+The U1 exposes per-tool filament information through print_task_config.
+
+Useful fields include:
+
+- filament_color_rgba
+- filament_type
+- filament_sub_type
+- filament_vendor
+- filament_exist
+
+Expected mapping:
+
+T0 / extruder  = color entry 0
+T1 / extruder1 = color entry 1
+T2 / extruder2 = color entry 2
+T3 / extruder3 = color entry 3
+
+For a tintable mode:
+
+1. Load the WLED preset containing the desired effect.
+2. Replace WLED Color 1 with the active toolhead's filament RGB value.
+
+The preset supplies the animation. The printer supplies the primary color.
+Tintable presets should use effects that respect Color 1. Rainbow or strongly
+palette-driven effects may hide or ignore the filament color.
+
+
+POSSIBLE MODES
+--------------
+- Off: cavity light off; WLED off. CONFIRMED.
+- White working light: cavity light turns on; preset 1. CONFIRMED.
+- Active-tool printing: printing/tool transition; active filament color.
+- Tool-change indication: active tool changes; new tool's filament color.
+- Heating: nozzle or bed begins heating; fixed warning preset.
+- Ready to print: required heaters reach target; fixed preset.
+- Paused: print changes to paused; fixed warning preset.
+- Resumed: paused changes to printing; active filament color.
+- Complete: print changes to complete; celebration preset.
+- Cancelled: print changes to cancelled; fixed warning preset.
+- Error: print changes to error; fixed warning preset.
+- Progress milestone: progress crosses a configured range; range preset.
+- Hot after print: print ends while nozzle/bed remains hot; safety preset.
+- Filament missing: reliable U1 filament state changes to missing; warning.
+
+
+TINTABLE MODE IDEAS
+-------------------
+- Active-tool printing.
+- Tool-change indication.
+- Resumed printing.
+- Possibly print completion.
+
+
+FIXED-COLOR MODE IDEAS
+----------------------
+- White working light.
+- Heating.
+- Paused.
+- Cancelled.
+- Error.
+- Hot-surface warning.
+- Filament missing.
+
+
+TRANSITION-BASED BEHAVIOR
+-------------------------
+Modes should react to changes, not merely conditions that are currently true.
+
+The watcher may remember:
+
+- Previous cavity-light state.
+- Previous print state.
+- Previous active tool.
+- Previous heating/temperature classification.
+- Previous progress band, if enabled.
+- Last WLED preset requested.
+- Last filament RGB sent.
+
+This prevents repeated network calls and preserves the rule that light-on starts
+in white regardless of the printer's pre-existing state.
+
+
+POSSIBLE PRIORITY ORDER
+-----------------------
+1. Cavity light off.
+2. Print error or filament failure.
+3. Print paused.
+4. Print cancelled or completed.
+5. Heating or hot-surface warning.
+6. Tool change or active printing.
+7. White working light.
+
+Only cavity-light priority is finalized. The remaining order is still open.
+
+
+RELIABILITY NOTES
+-----------------
+- Good print states: standby, printing, paused, complete, cancelled, error.
+- virtual_sdcard.progress provides progress without slicer changes.
+- Exact layer data may require slicer commands and is less desirable.
+- Heater temperatures and targets are directly readable.
+- Active-tool and filament-color fields should be verified on installed firmware.
+- U1 filament/runout object names must be verified before using them.
+- A watcher inside Klipper cannot set an offline preset after Klipper crashes.
+
+
+NON-GOALS
+---------
+- No start/end G-code changes.
+- No slicer-profile changes solely for lighting.
+- No wrapping factory print, pause, resume, tool-change, or LED commands when
+  observation is sufficient.
+- No printer-controller electrical connection solely for state detection.
+- No repeated WLED calls when nothing changed.
+- No detailed effect construction in Klipper when WLED presets can own it.
+
+
+DECISIONS BEFORE BUILDING
+-------------------------
+1. Which modes belong in the first status-aware version?
+2. Which WLED preset number belongs to each mode?
+3. Which modes use active-tool color versus fixed preset colors?
+4. How long should complete, cancelled, and error effects remain active?
+5. Include progress milestones, or only tool/color changes while printing?
+6. Monitor the active nozzle, all nozzles, the bed, or a combined heat state?
+7. Use a post-print hot-surface warning, and at what temperature thresholds?
+8. Which U1 filament/runout fields are present and reliable?
