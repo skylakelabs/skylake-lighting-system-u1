@@ -64,7 +64,7 @@ STEP 2: CONFIGURE WLED
 Open skylake-moonraker.conf and change:
 
     address: 192.168.0.123
-    chain_count: 60
+    chain_count: 20
 
 Use the WLED controller's fixed address and actual LED count. Leave:
 
