@@ -13,6 +13,14 @@ This README is the abbreviated procedure for users already comfortable with Flui
 | --- | --- |
 | [`skylake-wled.cfg`](skylake-wled.cfg) | Enables the top-cover 24 V rail and mirrors the cavity-light state to WLED. |
 | [`skylake-moonraker.conf`](skylake-moonraker.conf) | Defines the WLED connection, preset, and 20-LED chain. |
+| [`LEDTopPanel-SkylakeLabs-1.7.6.3mf`](models/LEDTopPanel-SkylakeLabs-1.7.6.3mf) | Prepared three-plate project with Snapmaker U1 slicer and support settings. |
+| [`SnapmakerU1-LEDTopPanel1.7.6.stl`](models/SnapmakerU1-LEDTopPanel1.7.6.stl) | Raw model geometry for users who prefer to configure slicing manually. |
+
+## Model files
+
+For the recommended print setup, open the 3MF project in a compatible slicer and review its plate, material, and support settings before printing. Use the STL when importing the geometry into another slicer or creating a custom print profile.
+
+Both model files are version **1.7.6** and are stored in the [`models`](models) folder.
 
 ## Advanced installation
 
