@@ -13,7 +13,6 @@ This README is the abbreviated procedure for users already comfortable with Flui
 | --- | --- |
 | [`skylake-wled.cfg`](skylake-wled.cfg) | Enables the top-cover 24 V rail and mirrors the cavity-light state to WLED. |
 | [`skylake-moonraker.conf`](skylake-moonraker.conf) | Defines the WLED connection, preset, and 20-LED chain. |
-| [`skylake-functionality-plan.txt`](skylake-functionality-plan.txt) | Roadmap for future printer-state lighting modes. |
 
 ## Advanced installation
 
